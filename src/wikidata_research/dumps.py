@@ -13,6 +13,7 @@ import json
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
+import sys
 
 
 def _open_text(path: Path):
@@ -23,9 +24,23 @@ def _open_text(path: Path):
     return path.open("rt", encoding="utf-8")
 
 
-def iter_entities(path: str | Path) -> Iterator[dict[str, Any]]:
-    """Yield Wikidata entities from a dump, one parsed object at a time."""
+def iter_entities(
+    path: str | Path,
+    *,
+    max_entities: int | None = None,
+    progress_every: int | None = None,
+) -> Iterator[dict[str, Any]]:
+    """Yield entities without loading the dump into memory.
+
+    `max_entities` enables a clearly incomplete smoke run, not a dataset count.
+    Progress counts emitted to stderr are parsed item entities, not file lines.
+    """
+    if max_entities is not None and max_entities <= 0:
+        raise ValueError("max_entities must be positive")
+    if progress_every is not None and progress_every <= 0:
+        raise ValueError("progress_every must be positive")
     source = Path(path)
+    count = 0
     with _open_text(source) as stream:
         for line_number, raw_line in enumerate(stream, start=1):
             line = raw_line.strip()
@@ -43,7 +58,12 @@ def iter_entities(path: str | Path) -> Iterator[dict[str, Any]]:
             if not isinstance(entity, dict):
                 raise ValueError(f"Expected a Wikidata object at {source}:{line_number}")
             if entity.get("type") == "item" and str(entity.get("id", "")).startswith("Q"):
+                count += 1
                 yield entity
+                if progress_every and count % progress_every == 0:
+                    print(f"scanned {count:,} Wikidata item entities", file=sys.stderr, flush=True)
+                if max_entities is not None and count >= max_entities:
+                    return
 
 
 def item_values(entity: dict[str, Any], property_id: str) -> list[str]:

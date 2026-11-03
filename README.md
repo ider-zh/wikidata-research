@@ -26,6 +26,16 @@ python -m pip install -e .
 python -m unittest discover -s tests -v
 ```
 
+### 0. Preflight a local dump without loading it all
+
+```bash
+wikidata-research probe \
+  --dump /path/to/wikidata-YYYYMMDD-all.json.bz2 \
+  --max-entities 2000
+```
+
+This verifies the local file is readable and parses only the first items. It does **not** validate the entire dump or estimate the total university count. For a bounded experimental run, add `--max-entities 20000` to the `discover-types` or `candidates` commands; those outputs will be marked `scan_complete: false` and must never be published as complete datasets.
+
 ### 1. Discover university subclasses from a local dump
 
 ```bash
@@ -79,6 +89,8 @@ The command reports provenance metadata, not the raw article. The HTML is stored
 - **Zenodo (optional):** archived, citation-ready snapshots after an accepted release.
 
 See [architecture](docs/architecture.md), [data policy](docs/data-policy.md), [release checklist](docs/release.md), and the [University study specification](studies/university/README.md).
+
+For running against a dump on a separate Linux machine, see [local predevelopment instructions](docs/predevelopment.md).
 
 ## 中文说明
 

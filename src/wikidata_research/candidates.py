@@ -17,10 +17,16 @@ from .dumps import iter_entities, item_values, labels
 ROOT_UNIVERSITY_QID = "Q3918"
 
 
-def discover_subclass_qids(dump_path: str | Path, seeds: set[str]) -> set[str]:
+def discover_subclass_qids(
+    dump_path: str | Path,
+    seeds: set[str],
+    *,
+    max_entities: int | None = None,
+    progress_every: int | None = None,
+) -> set[str]:
     """Find P279 descendants (including seeds) through reverse graph traversal."""
     children: dict[str, set[str]] = defaultdict(set)
-    for entity in iter_entities(dump_path):
+    for entity in iter_entities(dump_path, max_entities=max_entities, progress_every=progress_every):
         child = entity["id"]
         for parent in item_values(entity, "P279"):
             children[parent].add(child)
@@ -36,14 +42,23 @@ def discover_subclass_qids(dump_path: str | Path, seeds: set[str]) -> set[str]:
 
 
 def write_taxonomy_proposals(
-    dump_path: str | Path, output_path: str | Path, seeds: set[str]
+    dump_path: str | Path,
+    output_path: str | Path,
+    seeds: set[str],
+    *,
+    max_entities: int | None = None,
+    progress_every: int | None = None,
 ) -> int:
-    proposed = discover_subclass_qids(dump_path, seeds)
+    proposed = discover_subclass_qids(
+        dump_path, seeds, max_entities=max_entities, progress_every=progress_every
+    )
     payload = {
         "entity_type": "university",
         "seed_type_qids": sorted(seeds),
         "candidate_type_qids": sorted(proposed),
         "status": "pending_agent_review",
+        "scan_complete": max_entities is None,
+        "max_entities": max_entities,
         "source_dump_name": Path(dump_path).name,
         "note": "Agent taxonomy and independent verification required before accepted_types export.",
     }
@@ -69,14 +84,21 @@ def read_agent_accepted_types(path: str | Path) -> set[str]:
 
 
 def write_university_candidates(
-    dump_path: str | Path, output_path: str | Path, accepted_types: set[str]
+    dump_path: str | Path,
+    output_path: str | Path,
+    accepted_types: set[str],
+    *,
+    max_entities: int | None = None,
+    progress_every: int | None = None,
 ) -> int:
     """Write matching entity metadata as NDJSON; never include full dump claims."""
     target = Path(output_path)
     target.parent.mkdir(parents=True, exist_ok=True)
     count = 0
     with target.open("w", encoding="utf-8") as stream:
-        for entity in iter_entities(dump_path):
+        for entity in iter_entities(
+            dump_path, max_entities=max_entities, progress_every=progress_every
+        ):
             type_matches = sorted(set(item_values(entity, "P31")) & accepted_types)
             if not type_matches:
                 continue
@@ -91,6 +113,7 @@ def write_university_candidates(
                 "matched_type_qids": type_matches,
                 "wikipedia_sitelinks": sitelinks,
                 "candidate_status": "pending_agent_review",
+                "scan_complete": max_entities is None,
                 "source_dump_name": Path(dump_path).name,
             }
             stream.write(json.dumps(record, ensure_ascii=False) + "\n")

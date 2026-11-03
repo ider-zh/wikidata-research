@@ -11,6 +11,7 @@ from wikidata_research.candidates import (
     write_university_candidates,
 )
 from wikidata_research.dumps import iter_entities, item_values
+from wikidata_research.probe import probe_dump
 
 
 def statement(qid, rank="normal"):
@@ -54,6 +55,22 @@ class WikidataDumpTests(unittest.TestCase):
             with self.subTest(suffix=suffix):
                 items = list(iter_entities(str(self.path) + suffix))
                 self.assertEqual(len(items), 6)
+
+    def test_limit_is_explicitly_partial(self):
+        self.assertEqual(len(list(iter_entities(self.path, max_entities=2))), 2)
+        output = self.path.parent / "taxonomy.json"
+        from wikidata_research.candidates import write_taxonomy_proposals
+        write_taxonomy_proposals(self.path, output, {"Q3918"}, max_entities=2)
+        self.assertFalse(json.loads(output.read_text())["scan_complete"])
+
+    def test_bz2_probe_reads_only_prefix(self):
+        compressed = self.path.parent / "sample.json.bz2"
+        compressed.write_bytes(bz2.compress(self.path.read_bytes()))
+        report = probe_dump(compressed, max_entities=3)
+        self.assertEqual(report["item_entities_read"], 3)
+        self.assertEqual(report["compression"], "bzip2")
+        self.assertFalse(report["full_dump_validated"])
+        self.assertEqual(report["status"], "partial_read_only_preflight")
 
     def test_subclass_discovery_skips_deprecated(self):
         found = discover_subclass_qids(self.path, {"Q3918"})
