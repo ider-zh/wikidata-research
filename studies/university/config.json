@@ -1,0 +1,28 @@
+{
+  "study_id": "university",
+  "version": "0.1.0",
+  "entity_type": "university",
+  "wikidata": {
+    "mode": "local_dump_only",
+    "seed_type_qids": ["Q3918"],
+    "taxonomy_expansion_property": "P279",
+    "instance_property": "P31",
+    "taxonomy_acceptance": "taxonomy_agent_then_independent_verifier"
+  },
+  "wikipedia": {
+    "mode": "online_mediawiki_api",
+    "cache_ttl_days": 30,
+    "language_selection": "agent_from_sitelinks",
+    "source_revision_required": true
+  },
+  "schema": "schemas/university_record.schema.json",
+  "research_language": "en",
+  "approval": "human_final_acceptance",
+  "publication": {
+    "destination": "huggingface_dataset",
+    "repo_id": null,
+    "source_dumps_allowed": false,
+    "wikipedia_raw_pages_allowed": false,
+    "unreviewed_outputs_allowed": false
+  }
+}

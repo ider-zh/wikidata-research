@@ -1,0 +1,17 @@
+{
+  "workflow_id": "university-v1",
+  "workflow_version": "0.1.0",
+  "status": "bootstrap_contract_not_orchestrated",
+  "stages": [
+    {"id": "01_discover_types", "runner": "local_code", "input": "local_wikidata_dump", "output": "taxonomy_candidates.json", "status": "implemented"},
+    {"id": "02_taxonomy_agent", "runner": "agent", "spec": "agents/taxonomy.md", "output": "taxonomy_decisions.jsonl", "status": "provider_not_configured"},
+    {"id": "03_verify_taxonomy", "runner": "independent_agent", "spec": "agents/verification.md", "output": "accepted_types.json", "status": "provider_not_configured"},
+    {"id": "04_export_candidates", "runner": "local_code", "input": "accepted_types.json", "output": "candidates.jsonl", "status": "implemented"},
+    {"id": "05_identity_review", "runner": "agent", "spec": "agents/identity.md", "output": "identity_decisions.jsonl", "status": "provider_not_configured"},
+    {"id": "06_fetch_wikipedia", "runner": "local_code", "input": "wikipedia_sitelinks", "output": "local_page_cache", "status": "client_implemented_batch_pending"},
+    {"id": "07_multilingual_extraction", "runner": "agent", "spec": "agents/extraction.md", "output": "structured_university_records", "status": "provider_not_configured"},
+    {"id": "08_evidence_verification", "runner": "independent_agent_and_code", "spec": "agents/verification.md", "output": "verified_records_and_quality_report", "status": "provider_not_configured"},
+    {"id": "09_human_acceptance", "runner": "human", "output": "signed_release_manifest", "status": "policy_defined"},
+    {"id": "10_publish_dataset", "runner": "controlled_publisher", "output": "huggingface_dataset_release", "status": "not_implemented"}
+  ]
+}

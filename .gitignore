@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+build/
+dist/
+
+# Local sources, caches, generated records, and sensitive runtime data
+data/
+cache/
+downloads/
+raw/
+raw_data/
+artifacts/
+outputs/
+logs/
+.cache/
+.env
+.env.*
+*.sqlite
+*.sqlite3
+*.duckdb
+*.parquet
+*.arrow
+*.ndjson
+*.jsonl
+*.bz2
+*.gz
+*.zst
+*.7z
+
+# Local credentials
+credentials.json
+*token*.secret
