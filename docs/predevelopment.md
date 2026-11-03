@@ -70,3 +70,45 @@ These two full operations scan the compressed dump sequentially. Expect lengthy 
 - Never upload the raw dump or cached Wikipedia pages to GitHub, Hugging Face, or CI artifacts.
 - The current implementation has no LLM provider adapter, no bulk Wikipedia scraper, no accepted university dataset, and no Hugging Face publisher. Those are explicit follow-on work items.
 - To diagnose a run remotely, share only the short `probe` JSON or selected aggregate counters, not raw source records or source HTML.
+
+## 6. Disk-backed index (recommended for large snapshots)
+
+The SQLite index stores P31/P279 statements (including statement IDs, qualifiers and references when present), labels, descriptions, and Wikipedia sitelinks. It is a **local source derivative**, not a releasable dataset. It can be large: check free disk space before full indexing. SQLite uses a 32 MiB page cache; total process memory also includes the current parsed entity and Python/runtime buffers.
+
+Start with a bounded smoke run:
+
+```bash
+wikidata-research build-index \
+  --dump "$WIKIDATA_SOURCE" \
+  --index data/university/smoke.sqlite \
+  --max-entities 20000
+
+wikidata-research index-types \
+  --index data/university/smoke.sqlite \
+  --output data/university/taxonomy-smoke.jsonl
+```
+
+After the source download and checksum have been checked, build a separate full index:
+
+```bash
+wikidata-research build-index \
+  --dump "$WIKIDATA_SOURCE" \
+  --index data/university/full.sqlite
+
+wikidata-research index-types \
+  --index data/university/full.sqlite \
+  --output data/university/taxonomy-proposals.jsonl
+```
+
+Each taxonomy proposal contains an actual P279 path to a seed plus direct P279 source statements. These are inputs to classification, **not** automatic acceptance. Once the taxonomy Agent and a separate verification Agent have produced a valid `accepted_types.json`:
+
+```bash
+wikidata-research index-candidates \
+  --index data/university/full.sqlite \
+  --types data/university/accepted_types.json \
+  --output data/university/candidates.jsonl
+```
+
+Changing the accepted type selection requires no additional dump decompression. Candidate records retain their matching P31 source statements and remain pending identity review.
+
+Index builds replace the destination only after success; failed builds leave an existing index intact. **Index ingestion does not yet resume after interruption**: rerun it from the start. Exports are atomic. A bounded index propagates `scan_complete: false` to every exported record. `scan_complete` describes scan scope, not external checksum verification or research acceptance. The source fingerprint records filename, size and modification time; it is not a cryptographic content identity. Full builds must use an operator-verified stable source.

@@ -13,6 +13,7 @@ from .candidates import (
 )
 from .wikipedia import WikipediaCache
 from .probe import probe_dump
+from .index import build_index, index_taxonomy, index_candidates
 
 
 def main() -> None:
@@ -42,8 +43,33 @@ def main() -> None:
     wiki.add_argument("--title", required=True)
     wiki.add_argument("--cache-dir", default="cache/wikipedia")
 
+    index = sub.add_parser("build-index", help="Build a local disk-backed P31/P279 index in one pass")
+    index.add_argument("--dump", required=True)
+    index.add_argument("--index", required=True)
+    index.add_argument("--max-entities", type=int, help="Incomplete smoke scan only")
+    index.add_argument("--progress-every", type=int, default=1000000)
+
+    types = sub.add_parser("index-types", help="Export taxonomy evidence packets without rescanning dump")
+    types.add_argument("--index", required=True)
+    types.add_argument("--seed", action="append", default=[])
+    types.add_argument("--output", required=True)
+
+    instances = sub.add_parser("index-candidates", help="Export reviewed P31 candidates from local index")
+    instances.add_argument("--index", required=True)
+    instances.add_argument("--types", required=True, help="Agent-verified taxonomy selection JSON")
+    instances.add_argument("--output", required=True)
+
     args = parser.parse_args()
-    if args.command == "probe":
+    if args.command == "build-index":
+        print(json.dumps(build_index(args.dump, args.index, max_entities=args.max_entities,
+                                     progress_every=args.progress_every)))
+    elif args.command == "index-types":
+        print(json.dumps(index_taxonomy(args.index, args.output,
+                                        set(args.seed or [ROOT_UNIVERSITY_QID]))))
+    elif args.command == "index-candidates":
+        print(json.dumps(index_candidates(args.index, args.output,
+                                          read_agent_accepted_types(args.types))))
+    elif args.command == "probe":
         print(json.dumps(probe_dump(args.dump, args.max_entities), ensure_ascii=False, indent=2))
     elif args.command == "discover-types":
         count = write_taxonomy_proposals(

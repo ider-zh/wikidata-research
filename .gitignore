@@ -23,6 +23,8 @@ logs/
 .env.*
 *.sqlite
 *.sqlite3
+*.sqlite-*
+*.sqlite3-*
 *.duckdb
 *.parquet
 *.arrow

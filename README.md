@@ -15,7 +15,7 @@ An agent-assisted, evidence-first research workbench for extracting multilingual
 
 ## Current status
 
-This repository contains a **tested bootstrap**, not a completed extraction campaign. It includes a streaming dump reader, subclass-type discovery, an initial university candidate exporter, an online Wikipedia client with a 30-day cache, schemas, agent contracts, and release-policy scaffolding. The LLM execution provider, complete event extraction, historical geocoding, and Hugging Face publication are follow-on implementations. No dataset has been published.
+This repository contains a **tested bootstrap**, not a completed extraction campaign. It includes a streaming dump reader, a disk-backed P31/P279 index, taxonomy evidence packets, university candidate exporters, an online Wikipedia client with a 30-day cache, schemas, agent contracts, and release-policy scaffolding. The LLM execution provider, complete event extraction, historical geocoding, and Hugging Face publication are follow-on implementations. No dataset has been published. See [the development handoff](docs/handoff.md) for the verified state and next tasks.
 
 ## Local setup
 
@@ -37,6 +37,8 @@ wikidata-research probe \
 This verifies the local file is readable and parses only the first items. It does **not** validate the entire dump or estimate the total university count. For a bounded experimental run, add `--max-entities 20000` to the `discover-types` or `candidates` commands; those outputs will be marked `scan_complete: false` and must never be published as complete datasets.
 
 ### 1. Discover university subclasses from a local dump
+
+For large snapshots, prefer the [disk-index workflow](docs/predevelopment.md#6-disk-backed-index-recommended-for-large-snapshots): `build-index` scans once, `index-types` emits class evidence for Agents, and `index-candidates` reuses the index after independent taxonomy verification. All index files and exports stay local. The older direct-scan commands below remain available for small experiments.
 
 ```bash
 wikidata-research discover-types \
